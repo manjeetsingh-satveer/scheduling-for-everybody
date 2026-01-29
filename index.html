@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Life Schedule - Smart Planning Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://apis.google.com/js/api.js" async defer></script>
     <style>
         :root {
             --cream: #FFF8F0;
@@ -451,23 +449,12 @@
                         <div class="subtitle">Your Smart Planning Assistant</div>
                     </div>
                     <div class="user-section">
-                        <button id="gcalButton" onclick="handleGoogleCalendar()" style="background: #4285f4; margin-right: 1rem;" disabled>
-                            ⏳ Loading...
+                        <button onclick="exportAllToCalendar()" style="background: #4CAF50; margin-right: 1rem;">
+                            📥 Export to Calendar
                         </button>
                         <div class="profile-pic" id="userInitial" onclick="openProfileModal()" style="cursor: pointer;"></div>
                         <span id="userName"></span>
                         <button class="logout-btn" onclick="logout()">Logout</button>
-                    </div>
-                </div>
-                <div id="gcalStatus" style="margin-top: 1rem; padding: 1rem; background: #e8f5e9; border-radius: 8px; display: none;">
-                    <strong>✓ Connected to Google Calendar</strong>
-                    <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button onclick="syncToGoogleCalendar()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-                            📤 Sync to Calendar
-                        </button>
-                        <button onclick="importFromGoogleCalendar()" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #5B8FA3;">
-                            📥 Import from Calendar
-                        </button>
                     </div>
                 </div>
             </header>
@@ -475,7 +462,7 @@
             <!-- AI Assistant -->
             <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 2rem;">
                 <h2 style="color: white; display: flex; align-items: center; gap: 0.5rem;">
-                     AI Assistant
+                    🤖 AI Assistant
                     <span id="notificationIndicator" style="display: inline-block; width: 10px; height: 10px; background: #4CAF50; border-radius: 50%; animation: blink 2s infinite;"></span>
                 </h2>
                 <div id="aiMessage" style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; backdrop-filter: blur(10px);"></div>
@@ -647,316 +634,145 @@
     <script>
         console.log('🚀 App starting...');
         
-        // Google Calendar Configuration
-        const GOOGLE_CLIENT_ID = '911937281319-913m7nhoe1n6atrqn2hu3erf0fbn8nv3.apps.googleusercontent.com';
-        const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
-        const SCOPES = "https://www.googleapis.com/auth/calendar.events";
-        
-        let gapiInited = false;
-        let gisInited = false;
-        let tokenClient;
-        let googleCalendarConnected = false;
-        let accessToken = null;
-        
-        // Initialize Google API
-        function gapiLoaded() {
-            gapi.load('client', initializeGapiClient);
-        }
-        
-        async function initializeGapiClient() {
-            try {
-                await gapi.client.init({
-                    discoveryDocs: DISCOVERY_DOCS,
-                });
-                gapiInited = true;
-                console.log('✓ Google API initialized');
-            } catch (error) {
-                console.error('Google API init error:', error);
-            }
-        }
-        
-        function gisLoaded() {
-            try {
-                tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: GOOGLE_CLIENT_ID,
-                    scope: SCOPES,
-                    callback: '', // defined later
-                });
-                gisInited = true;
-                console.log('✓ Google Identity Services initialized');
-            } catch (error) {
-                console.error('GIS init error:', error);
-            }
-        }
-        
-        // Handle Google Calendar button
-        function handleGoogleCalendar() {
-            console.log('Google Calendar button clicked');
-            console.log('gapiInited:', gapiInited);
-            console.log('gisInited:', gisInited);
-            console.log('googleCalendarConnected:', googleCalendarConnected);
+        // ICS Calendar Export Functions
+        function generateICS(event) {
+            const startDateTime = new Date(`${event.date}T${event.time}`);
+            const endTime = event.endTime || addOneHour(event.time);
+            const endDateTime = new Date(`${event.date}T${endTime}`);
             
-            if (!gapiInited || !gisInited) {
-                alert('Google Calendar is still loading. Please wait a moment and try again.\n\nIf this persists, try refreshing the page.');
+            const formatDate = (date) => {
+                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            };
+            
+            const escapeText = (text) => {
+                return (text || '').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+            };
+            
+            let description = `${event.type.toUpperCase()}${event.isRecurring ? ` (${event.academicSystem})` : ''}`;
+            if (event.notes) {
+                description += `\\n\\nNotes:\\n${escapeText(event.notes)}`;
+            }
+            
+            const ics = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Life Schedule//EN',
+                'CALSCALE:GREGORIAN',
+                'METHOD:PUBLISH',
+                'X-WR-CALNAME:Life Schedule',
+                'X-WR-TIMEZONE:' + Intl.DateTimeFormat().resolvedOptions().timeZone,
+                'BEGIN:VEVENT',
+                'UID:' + event.id + '@lifeschedule.app',
+                'DTSTAMP:' + formatDate(new Date()),
+                'DTSTART:' + formatDate(startDateTime),
+                'DTEND:' + formatDate(endDateTime),
+                'SUMMARY:' + escapeText(event.title),
+                'DESCRIPTION:' + description,
+                'LOCATION:' + escapeText(event.location),
+                'STATUS:CONFIRMED',
+                'SEQUENCE:0',
+                'BEGIN:VALARM',
+                'TRIGGER:-PT1H',
+                'ACTION:DISPLAY',
+                'DESCRIPTION:' + escapeText(event.title) + ' in 1 hour',
+                'END:VALARM',
+                'BEGIN:VALARM',
+                'TRIGGER:-PT15M',
+                'ACTION:DISPLAY',
+                'DESCRIPTION:' + escapeText(event.title) + ' in 15 minutes',
+                'END:VALARM',
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\r\n');
+            
+            return ics;
+        }
+        
+        function downloadICS(event) {
+            const ics = generateICS(event);
+            const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${event.title.replace(/[^a-z0-9]/gi, '_')}.ics`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+        
+        function exportAllToCalendar() {
+            if (scheduleItems.length === 0) {
+                alert('No events to export! Add some events first.');
                 return;
             }
             
-            if (googleCalendarConnected) {
-                // Already connected, show sync options
-                const status = document.getElementById('gcalStatus');
-                status.style.display = status.style.display === 'none' ? 'block' : 'none';
-            } else {
-                // Not connected, authenticate
-                console.log('Starting authentication...');
-                authenticateGoogleCalendar();
-            }
-        }
-        
-        // Authenticate with Google Calendar
-        function authenticateGoogleCalendar() {
-            tokenClient.callback = async (resp) => {
-                if (resp.error !== undefined) {
-                    console.error('Google Calendar auth error:', resp);
-                    alert('Failed to connect to Google Calendar');
-                    return;
-                }
+            const allEvents = scheduleItems.map(event => {
+                const startDateTime = new Date(`${event.date}T${event.time}`);
+                const endTime = event.endTime || addOneHour(event.time);
+                const endDateTime = new Date(`${event.date}T${endTime}`);
                 
-                accessToken = resp.access_token;
-                gapi.client.setToken({access_token: accessToken});
-                
-                googleCalendarConnected = true;
-                document.getElementById('gcalButton').textContent = '✓ Google Calendar';
-                document.getElementById('gcalStatus').style.display = 'block';
-                
-                // Save connection status
-                if (currentUser) {
-                    currentUser.googleCalendarConnected = true;
-                    currentUser.googleAccessToken = accessToken;
-                    users[currentUser.username] = currentUser;
-                    localStorage.setItem('scheduler_users', JSON.stringify(users));
-                }
-                
-                alert('✓ Successfully connected to Google Calendar!');
-            };
-            
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({prompt: 'consent'});
-            } else {
-                tokenClient.requestAccessToken({prompt: ''});
-            }
-        }
-        
-        // Sync event to Google Calendar
-        async function syncEventToGoogleCalendar(item) {
-            if (!googleCalendarConnected) {
-                console.log('Google Calendar not connected');
-                return null;
-            }
-            
-            try {
-                const endTime = item.endTime || addOneHour(item.time);
-                
-                // Build description with notes
-                let description = `${item.type.toUpperCase()}${item.isRecurring ? ` (${item.academicSystem})` : ''}${item.isDueDate ? ' - DUE DATE' : ''}`;
-                if (item.notes) {
-                    description += `\n\nNotes:\n${item.notes}`;
-                }
-                
-                const event = {
-                    'summary': item.title,
-                    'location': item.location,
-                    'description': description,
-                    'start': {
-                        'dateTime': `${item.date}T${item.time}:00`,
-                        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
-                    },
-                    'end': {
-                        'dateTime': `${item.date}T${endTime}:00`,
-                        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
-                    },
-                    'reminders': {
-                        'useDefault': false,
-                        'overrides': [
-                            {'method': 'popup', 'minutes': 60},
-                            {'method': 'popup', 'minutes': 15}
-                        ]
-                    }
+                const formatDate = (date) => {
+                    return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
                 };
                 
-                const request = await gapi.client.calendar.events.insert({
-                    'calendarId': 'primary',
-                    'resource': event
-                });
+                const escapeText = (text) => {
+                    return (text || '').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+                };
                 
-                console.log('✓ Event synced to Google Calendar:', item.title);
-                return request.result.id;
-            } catch (error) {
-                console.error('Error syncing to Google Calendar:', error);
-                return null;
-            }
+                let description = `${event.type.toUpperCase()}${event.isRecurring ? ` (${event.academicSystem})` : ''}`;
+                if (event.notes) {
+                    description += `\\n\\nNotes:\\n${escapeText(event.notes)}`;
+                }
+                
+                return [
+                    'BEGIN:VEVENT',
+                    'UID:' + event.id + '@lifeschedule.app',
+                    'DTSTAMP:' + formatDate(new Date()),
+                    'DTSTART:' + formatDate(startDateTime),
+                    'DTEND:' + formatDate(endDateTime),
+                    'SUMMARY:' + escapeText(event.title),
+                    'DESCRIPTION:' + description,
+                    'LOCATION:' + escapeText(event.location),
+                    'STATUS:CONFIRMED',
+                    'SEQUENCE:0',
+                    'BEGIN:VALARM',
+                    'TRIGGER:-PT1H',
+                    'ACTION:DISPLAY',
+                    'DESCRIPTION:' + escapeText(event.title) + ' in 1 hour',
+                    'END:VALARM',
+                    'BEGIN:VALARM',
+                    'TRIGGER:-PT15M',
+                    'ACTION:DISPLAY',
+                    'DESCRIPTION:' + escapeText(event.title) + ' in 15 minutes',
+                    'END:VALARM',
+                    'END:VEVENT'
+                ].join('\r\n');
+            }).join('\r\n');
+            
+            const ics = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Life Schedule//EN',
+                'CALSCALE:GREGORIAN',
+                'METHOD:PUBLISH',
+                'X-WR-CALNAME:Life Schedule - ' + currentUser.name,
+                'X-WR-TIMEZONE:' + Intl.DateTimeFormat().resolvedOptions().timeZone,
+                allEvents,
+                'END:VCALENDAR'
+            ].join('\r\n');
+            
+            const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'LifeSchedule_AllEvents.ics';
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            alert(`✅ Downloaded calendar with ${scheduleItems.length} events!\n\nOpen the file to import into:\n• Apple Calendar\n• Google Calendar\n• Outlook\n• Any calendar app`);
         }
         
-        // Add one hour to time
         function addOneHour(timeStr) {
             const [hours, minutes] = timeStr.split(':').map(Number);
             const newHours = (hours + 1) % 24;
             return `${String(newHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-        }
-        
-        // Sync all unsynced events to Google Calendar
-        async function syncToGoogleCalendar() {
-            if (!googleCalendarConnected) {
-                alert('Please connect to Google Calendar first');
-                return;
-            }
-            
-            const unsynced = scheduleItems.filter(item => !item.googleCalendarId);
-            
-            if (unsynced.length === 0) {
-                alert('All events are already synced!');
-                return;
-            }
-            
-            let synced = 0;
-            let failed = 0;
-            
-            for (const item of unsynced) {
-                const gcalId = await syncEventToGoogleCalendar(item);
-                if (gcalId) {
-                    item.googleCalendarId = gcalId;
-                    synced++;
-                } else {
-                    failed++;
-                }
-            }
-            
-            saveUserData();
-            displaySchedule();
-            
-            alert(`Sync complete!\n✓ ${synced} events synced${failed > 0 ? `\n✗ ${failed} failed` : ''}`);
-        }
-        
-        // Import events from Google Calendar
-        async function importFromGoogleCalendar() {
-            if (!googleCalendarConnected) {
-                alert('Please connect to Google Calendar first');
-                return;
-            }
-            
-            try {
-                const now = new Date();
-                const oneMonthLater = new Date(now.getTime() + 30*24*60*60*1000);
-                
-                const response = await gapi.client.calendar.events.list({
-                    'calendarId': 'primary',
-                    'timeMin': now.toISOString(),
-                    'timeMax': oneMonthLater.toISOString(),
-                    'showDeleted': false,
-                    'singleEvents': true,
-                    'orderBy': 'startTime'
-                });
-                
-                const events = response.result.items;
-                
-                if (!events || events.length === 0) {
-                    alert('No upcoming events found in Google Calendar');
-                    return;
-                }
-                
-                let imported = 0;
-                
-                events.forEach(event => {
-                    // Check if event already exists
-                    const exists = scheduleItems.some(item => item.googleCalendarId === event.id);
-                    if (exists) return;
-                    
-                    const startDateTime = event.start.dateTime || event.start.date;
-                    const date = startDateTime.split('T')[0];
-                    const time = startDateTime.includes('T') ? startDateTime.split('T')[1].substring(0, 5) : '09:00';
-                    
-                    const item = {
-                        type: 'work', // Default type
-                        title: event.summary || 'Imported Event',
-                        date: date,
-                        time: time,
-                        location: event.location || 'No location',
-                        googleCalendarId: event.id,
-                        isRecurring: false,
-                        id: Date.now() + Math.random()
-                    };
-                    
-                    scheduleItems.push(item);
-                    imported++;
-                });
-                
-                saveUserData();
-                displaySchedule();
-                updateAIAssistant();
-                
-                alert(`✓ Imported ${imported} events from Google Calendar!`);
-            } catch (error) {
-                console.error('Error importing from Google Calendar:', error);
-                alert('Failed to import events from Google Calendar');
-            }
-        }
-        
-        // Initialize Google Calendar API when page loads
-        window.addEventListener('load', () => {
-            console.log('🔄 Page loaded, initializing Google APIs...');
-            
-            // Wait for scripts to load
-            let attempts = 0;
-            const maxAttempts = 20; // 10 seconds max
-            
-            const initCheck = setInterval(() => {
-                attempts++;
-                console.log(`Attempt ${attempts}/${maxAttempts} - Checking Google APIs...`);
-                
-                // Check GAPI
-                if (typeof gapi !== 'undefined' && !gapiInited) {
-                    console.log('✓ GAPI script loaded!');
-                    gapiLoaded();
-                }
-                
-                // Check GIS
-                if (typeof google !== 'undefined' && typeof google.accounts !== 'undefined' && !gisInited) {
-                    console.log('✓ GIS script loaded!');
-                    gisLoaded();
-                }
-                
-                // Both ready
-                if (gapiInited && gisInited) {
-                    console.log('✅ Google Calendar API ready!');
-                    clearInterval(initCheck);
-                    updateGoogleCalendarButton();
-                }
-                
-                // Timeout after max attempts
-                if (attempts >= maxAttempts) {
-                    console.warn('⚠️ Google APIs did not load in time');
-                    clearInterval(initCheck);
-                    const btn = document.getElementById('gcalButton');
-                    if (btn) {
-                        btn.textContent = '⚠️ Offline';
-                        btn.disabled = true;
-                        btn.title = 'Google Calendar scripts failed to load. Try refreshing the page.';
-                    }
-                }
-            }, 500);
-        });
-        
-        // Update button text based on API status
-        function updateGoogleCalendarButton() {
-            const btn = document.getElementById('gcalButton');
-            if (btn) {
-                if (gapiInited && gisInited) {
-                    btn.textContent = googleCalendarConnected ? '✓ Google Calendar' : '📅 Google Calendar';
-                    btn.disabled = false;
-                } else {
-                    btn.textContent = '⏳ Loading...';
-                    btn.disabled = true;
-                }
-            }
         }
         
         // Data storage
@@ -1192,21 +1008,6 @@
                 initial.textContent = currentUser.name.charAt(0).toUpperCase();
             }
             
-            // Update Google Calendar button
-            updateGoogleCalendarButton();
-            
-            // Restore Google Calendar connection status
-            if (currentUser.googleCalendarConnected && gapiInited && gisInited) {
-                googleCalendarConnected = true;
-                document.getElementById('gcalButton').textContent = '✓ Google Calendar';
-                
-                // Try to restore access token
-                if (currentUser.googleAccessToken) {
-                    accessToken = currentUser.googleAccessToken;
-                    gapi.client.setToken({access_token: accessToken});
-                }
-            }
-            
             // Load user data
             loadUserData();
             displayAll();
@@ -1432,33 +1233,6 @@
             
             saveUserData();
             
-            // Auto-sync to Google Calendar if connected
-            if (googleCalendarConnected) {
-                if (isRecurring) {
-                    // Sync all recurring events
-                    const newEvents = scheduleItems.slice(-recurringDates.length);
-                    let syncPromises = newEvents.map(event => 
-                        syncEventToGoogleCalendar(event).then(gcalId => {
-                            if (gcalId) event.googleCalendarId = gcalId;
-                        })
-                    );
-                    Promise.all(syncPromises).then(() => {
-                        saveUserData();
-                        console.log('✓ Recurring events synced to Google Calendar');
-                    });
-                } else {
-                    // Sync single event
-                    const lastItem = scheduleItems[scheduleItems.length - 1];
-                    syncEventToGoogleCalendar(lastItem).then(gcalId => {
-                        if (gcalId) {
-                            lastItem.googleCalendarId = gcalId;
-                            saveUserData();
-                            showAINotification('📅 Synced to Google Calendar', `${lastItem.title} added to your calendar`);
-                        }
-                    });
-                }
-            }
-            
             // Clear inputs
             document.getElementById('scheduleTitle').value = '';
             document.getElementById('scheduleDate').value = '';
@@ -1490,13 +1264,15 @@
                 <div class="item ${item.type}">
                     <span class="item-type ${item.type}">${item.type}</span>
                     ${item.isRecurring ? `<span class="item-type" style="background: #9B59B6;">🔄 ${item.academicSystem}</span>` : ''}
-                    ${item.googleCalendarId ? `<span class="item-type" style="background: #4285f4;">📅 Synced</span>` : ''}
                     ${item.isDueDate ? `<span class="item-type" style="background: #E67E22;">📌 Due</span>` : ''}
                     <div class="item-title">${item.title}</div>
                     <div>📅 ${item.date} ${item.isDueDate ? 'due at' : 'from'} ${item.time}${item.endTime && !item.isDueDate ? ' - ' + item.endTime : ''}</div>
                     <div>📍 ${item.location}</div>
                     ${item.notes ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 0.9rem;">📝 ${item.notes}</div>` : ''}
-                    <button class="delete-btn" onclick="deleteSchedule(${item.id})">Delete</button>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        <button class="delete-btn" onclick="downloadICS(${JSON.stringify(item).replace(/"/g, '&quot;')})">📥 Add to Calendar</button>
+                        <button class="delete-btn" onclick="deleteSchedule(${item.id})">Delete</button>
+                    </div>
                 </div>
             `).join('');
         }
