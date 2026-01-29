@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Schedule - Smart Planning Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <style>
+        :root {
+            --cream: #FFF8F0;
+            --warmgray: #E8E0D5;
+            --charcoal: #2C2C2C;
+            --rust: #C85A3F;
+            --sage: #7A9D7C;
+            --sky: #5B8FA3;
+            --gold: #D4A76A;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--warmgray) 100%);
+            color: var(--charcoal);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Auth Screen */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+        }
+        
+        .auth-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            max-width: 450px;
+            width: 100%;
+        }
+        
+        .auth-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--charcoal);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+        
+        .auth-subtitle {
+            color: var(--rust);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--charcoal);
+            font-size: 0.9rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--warmgray);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--cream);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--rust);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(200, 90, 63, 0.1);
+        }
+        
+        .auth-button {
+            width: 100%;
+            background: var(--rust);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 1rem;
+        }
+        
+        .auth-button:hover {
+            background: #A64830;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(200, 90, 63, 0.3);
+        }
+        
+        .auth-toggle {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #666;
+        }
+        
+        .auth-link {
+            color: var(--rust);
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .message {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            display: block;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3a3;
+            display: block;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* App Screen */
+        .app-container {
+            display: none;
+        }
+        
+        .app-container.active {
+            display: block;
+        }
+        
+        header {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px var(--shadow);
+            margin-bottom: 2rem;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--charcoal);
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            color: var(--rust);
+            font-weight: 500;
+        }
+        
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .profile-pic {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--rust);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .logout-btn {
+            background: var(--rust);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .logout-btn:hover {
+            background: #A64830;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 24px var(--shadow);
+        }
+        
+        h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--charcoal);
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--charcoal);
+            font-size: 0.9rem;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="date"],
+        input[type="time"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--warmgray);
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            background: var(--cream);
+        }
+        
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--rust);
+            background: white;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        button:not(.auth-button):not(.logout-btn) {
+            background: var(--rust);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .item {
+            background: var(--cream);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--sage);
+        }
+        
+        .item.class { border-left-color: var(--sky); }
+        .item.work { border-left-color: var(--rust); }
+        .item.flight { border-left-color: var(--gold); }
+        .item.assignment { border-left-color: var(--sage); }
+        
+        .item-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .item-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        
+        .item-type.class { background: var(--sky); }
+        .item-type.work { background: var(--rust); }
+        .item-type.flight { background: var(--gold); }
+        .item-type.assignment { background: var(--sage); }
+        
+        .delete-btn {
+            background: transparent;
+            color: var(--rust);
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+            font-style: italic;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .ai-notification {
+            background: rgba(255,255,255,0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Container -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-card">
+            <h1 class="auth-title">Life Schedule</h1>
+            <p class="auth-subtitle">Smart Planning Assistant</p>
+            
+            <div id="message" class="message"></div>
+            
+            <!-- Sign In Form -->
+            <form id="signinForm" class="hidden">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="signinUsername" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="signinPassword" required>
+                </div>
+                <button type="submit" class="auth-button">Sign In</button>
+                <div class="auth-toggle">
+                    Don't have an account? <a class="auth-link" onclick="showSignup()">Sign Up</a>
+                </div>
+            </form>
+            
+            <!-- Sign Up Form -->
+            <form id="signupForm">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="signupName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="signupUsername" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="signupEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="signupPassword" required>
+                </div>
+                <button type="submit" class="auth-button">Sign Up</button>
+                <div class="auth-toggle">
+                    Already have an account? <a class="auth-link" onclick="showSignin()">Sign In</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container" id="appContainer">
+        <div class="container">
+            <header>
+                <div class="header-content">
+                    <div>
+                        <h1>Life Schedule</h1>
+                        <div class="subtitle">Your Smart Planning Assistant</div>
+                    </div>
+                    <div class="user-section">
+                        <button id="gcalButton" onclick="handleGoogleCalendar()" style="background: #4285f4; margin-right: 1rem;" disabled>
+                            ⏳ Loading...
+                        </button>
+                        <div class="profile-pic" id="userInitial" onclick="openProfileModal()" style="cursor: pointer;"></div>
+                        <span id="userName"></span>
+                        <button class="logout-btn" onclick="logout()">Logout</button>
+                    </div>
+                </div>
+                <div id="gcalStatus" style="margin-top: 1rem; padding: 1rem; background: #e8f5e9; border-radius: 8px; display: none;">
+                    <strong>✓ Connected to Google Calendar</strong>
+                    <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button onclick="syncToGoogleCalendar()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                            📤 Sync to Calendar
+                        </button>
+                        <button onclick="importFromGoogleCalendar()" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #5B8FA3;">
+                            📥 Import from Calendar
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- AI Assistant -->
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 2rem;">
+                <h2 style="color: white; display: flex; align-items: center; gap: 0.5rem;">
+                     AI Assistant
+                    <span id="notificationIndicator" style="display: inline-block; width: 10px; height: 10px; background: #4CAF50; border-radius: 50%; animation: blink 2s infinite;"></span>
+                </h2>
+                <div id="aiMessage" style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px; backdrop-filter: blur(10px);"></div>
+                <div id="aiNotifications" style="margin-top: 1rem;"></div>
+            </div>
+
+            <div class="dashboard">
+                <!-- Add Schedule -->
+                <div class="card">
+                    <h2>📅 Add Schedule</h2>
+                    <div class="input-group">
+                        <label>Type</label>
+                        <select id="scheduleType" onchange="toggleClassOptions()">
+                            <option value="class">Class</option>
+                            <option value="work">Work</option>
+                            <option value="flight">Flight Training</option>
+                            <option value="assignment">Assignment</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Class-specific options -->
+                    <div id="classOptions" style="display: block;">
+                        <div class="input-group">
+                            <label>Academic System</label>
+                            <select id="academicSystem">
+                                <option value="semester">Semester System</option>
+                                <option value="quarter">Quarter System</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="recurringClass" onchange="toggleRecurring()" style="width: auto;">
+                                Recurring Class
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Title</label>
+                        <input type="text" id="scheduleTitle">
+                    </div>
+                    
+                    <!-- Assignment: Show due date instead of time -->
+                    <div id="assignmentFields" style="display: none;">
+                        <div class="input-group">
+                            <label>Due Date</label>
+                            <input type="date" id="assignmentDueDate">
+                        </div>
+                        <div class="input-group">
+                            <label>Due Time</label>
+                            <input type="time" id="assignmentDueTime" value="23:59">
+                        </div>
+                    </div>
+                    
+                    <!-- Single event date/time (for non-recurring and non-assignment) -->
+                    <div id="singleEventFields">
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>Date</label>
+                                <input type="date" id="scheduleDate">
+                            </div>
+                            <div class="input-group">
+                                <label>Start Time</label>
+                                <input type="time" id="scheduleTime">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>End Time</label>
+                            <input type="time" id="scheduleEndTime">
+                        </div>
+                    </div>
+                    
+                    <!-- Recurring class fields -->
+                    <div id="recurringFields" style="display: none;">
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>Start Date</label>
+                                <input type="date" id="classStartDate">
+                            </div>
+                            <div class="input-group">
+                                <label>End Date</label>
+                                <input type="date" id="classEndDate">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>Start Time</label>
+                                <input type="time" id="recurringTime">
+                            </div>
+                            <div class="input-group">
+                                <label>End Time</label>
+                                <input type="time" id="recurringEndTime">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Days of Week (hold Ctrl/Cmd to select multiple)</label>
+                            <select id="recurringDays" multiple style="height: 120px;">
+                                <option value="1">Monday</option>
+                                <option value="2">Tuesday</option>
+                                <option value="3">Wednesday</option>
+                                <option value="4">Thursday</option>
+                                <option value="5">Friday</option>
+                                <option value="6">Saturday</option>
+                                <option value="0">Sunday</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Location</label>
+                        <input type="text" id="scheduleLocation">
+                    </div>
+                    <div class="input-group">
+                        <label>Description / Notes</label>
+                        <textarea id="scheduleNotes" placeholder="Add any additional details, homework, materials needed, etc..." style="min-height: 80px;"></textarea>
+                    </div>
+                    <button onclick="addSchedule()">Add Event</button>
+                </div>
+
+                <!-- To-Do List -->
+                <div class="card">
+                    <h2>✓ To-Do List</h2>
+                    <div class="input-group">
+                        <input type="text" id="todoInput" placeholder="Add a task...">
+                    </div>
+                    <button onclick="addTodo()">Add Task</button>
+                    <div id="todoList" style="margin-top: 1rem;"></div>
+                </div>
+
+                <!-- Daily Journal -->
+                <div class="card">
+                    <h2>📝 Daily Journal</h2>
+                    <div class="input-group">
+                        <textarea id="journalInput" placeholder="How was your day?"></textarea>
+                    </div>
+                    <button onclick="addJournal()">Save Entry</button>
+                    <div id="journalList" style="margin-top: 1rem;"></div>
+                </div>
+            </div>
+
+            <!-- Schedule Display -->
+            <div class="card">
+                <h2>📋 Your Schedule</h2>
+                <div id="scheduleList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 2rem; border-radius: 20px; max-width: 500px; width: 90%;">
+            <h2>Edit Profile</h2>
+            <div class="input-group">
+                <label>Profile Picture</label>
+                <input type="file" id="profilePicInput" accept="image/*" onchange="previewProfilePic(event)">
+                <img id="profilePreview" style="max-width: 200px; border-radius: 50%; margin-top: 1rem; display: none;">
+            </div>
+            <div class="input-group">
+                <label>Name</label>
+                <input type="text" id="editName" class="form-input">
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button onclick="saveProfile()">Save</button>
+                <button onclick="closeProfileModal()" style="background: #666;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 App starting...');
+        
+        // Google Calendar Configuration
+        const GOOGLE_CLIENT_ID = '911937281319-913m7nhoe1n6atrqn2hu3erf0fbn8nv3.apps.googleusercontent.com';
+        const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
+        const SCOPES = "https://www.googleapis.com/auth/calendar.events";
+        
+        let gapiInited = false;
+        let gisInited = false;
+        let tokenClient;
+        let googleCalendarConnected = false;
+        let accessToken = null;
+        
+        // Initialize Google API
+        function gapiLoaded() {
+            gapi.load('client', initializeGapiClient);
+        }
+        
+        async function initializeGapiClient() {
+            try {
+                await gapi.client.init({
+                    discoveryDocs: DISCOVERY_DOCS,
+                });
+                gapiInited = true;
+                console.log('✓ Google API initialized');
+            } catch (error) {
+                console.error('Google API init error:', error);
+            }
+        }
+        
+        function gisLoaded() {
+            try {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: SCOPES,
+                    callback: '', // defined later
+                });
+                gisInited = true;
+                console.log('✓ Google Identity Services initialized');
+            } catch (error) {
+                console.error('GIS init error:', error);
+            }
+        }
+        
+        // Handle Google Calendar button
+        function handleGoogleCalendar() {
+            console.log('Google Calendar button clicked');
+            console.log('gapiInited:', gapiInited);
+            console.log('gisInited:', gisInited);
+            console.log('googleCalendarConnected:', googleCalendarConnected);
+            
+            if (!gapiInited || !gisInited) {
+                alert('Google Calendar is still loading. Please wait a moment and try again.\n\nIf this persists, try refreshing the page.');
+                return;
+            }
+            
+            if (googleCalendarConnected) {
+                // Already connected, show sync options
+                const status = document.getElementById('gcalStatus');
+                status.style.display = status.style.display === 'none' ? 'block' : 'none';
+            } else {
+                // Not connected, authenticate
+                console.log('Starting authentication...');
+                authenticateGoogleCalendar();
+            }
+        }
+        
+        // Authenticate with Google Calendar
+        function authenticateGoogleCalendar() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) {
+                    console.error('Google Calendar auth error:', resp);
+                    alert('Failed to connect to Google Calendar');
+                    return;
+                }
+                
+                accessToken = resp.access_token;
+                gapi.client.setToken({access_token: accessToken});
+                
+                googleCalendarConnected = true;
+                document.getElementById('gcalButton').textContent = '✓ Google Calendar';
+                document.getElementById('gcalStatus').style.display = 'block';
+                
+                // Save connection status
+                if (currentUser) {
+                    currentUser.googleCalendarConnected = true;
+                    currentUser.googleAccessToken = accessToken;
+                    users[currentUser.username] = currentUser;
+                    localStorage.setItem('scheduler_users', JSON.stringify(users));
+                }
+                
+                alert('✓ Successfully connected to Google Calendar!');
+            };
+            
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                tokenClient.requestAccessToken({prompt: ''});
+            }
+        }
+        
+        // Sync event to Google Calendar
+        async function syncEventToGoogleCalendar(item) {
+            if (!googleCalendarConnected) {
+                console.log('Google Calendar not connected');
+                return null;
+            }
+            
+            try {
+                const endTime = item.endTime || addOneHour(item.time);
+                
+                // Build description with notes
+                let description = `${item.type.toUpperCase()}${item.isRecurring ? ` (${item.academicSystem})` : ''}${item.isDueDate ? ' - DUE DATE' : ''}`;
+                if (item.notes) {
+                    description += `\n\nNotes:\n${item.notes}`;
+                }
+                
+                const event = {
+                    'summary': item.title,
+                    'location': item.location,
+                    'description': description,
+                    'start': {
+                        'dateTime': `${item.date}T${item.time}:00`,
+                        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                    },
+                    'end': {
+                        'dateTime': `${item.date}T${endTime}:00`,
+                        'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                    },
+                    'reminders': {
+                        'useDefault': false,
+                        'overrides': [
+                            {'method': 'popup', 'minutes': 60},
+                            {'method': 'popup', 'minutes': 15}
+                        ]
+                    }
+                };
+                
+                const request = await gapi.client.calendar.events.insert({
+                    'calendarId': 'primary',
+                    'resource': event
+                });
+                
+                console.log('✓ Event synced to Google Calendar:', item.title);
+                return request.result.id;
+            } catch (error) {
+                console.error('Error syncing to Google Calendar:', error);
+                return null;
+            }
+        }
+        
+        // Add one hour to time
+        function addOneHour(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const newHours = (hours + 1) % 24;
+            return `${String(newHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+        
+        // Sync all unsynced events to Google Calendar
+        async function syncToGoogleCalendar() {
+            if (!googleCalendarConnected) {
+                alert('Please connect to Google Calendar first');
+                return;
+            }
+            
+            const unsynced = scheduleItems.filter(item => !item.googleCalendarId);
+            
+            if (unsynced.length === 0) {
+                alert('All events are already synced!');
+                return;
+            }
+            
+            let synced = 0;
+            let failed = 0;
+            
+            for (const item of unsynced) {
+                const gcalId = await syncEventToGoogleCalendar(item);
+                if (gcalId) {
+                    item.googleCalendarId = gcalId;
+                    synced++;
+                } else {
+                    failed++;
+                }
+            }
+            
+            saveUserData();
+            displaySchedule();
+            
+            alert(`Sync complete!\n✓ ${synced} events synced${failed > 0 ? `\n✗ ${failed} failed` : ''}`);
+        }
+        
+        // Import events from Google Calendar
+        async function importFromGoogleCalendar() {
+            if (!googleCalendarConnected) {
+                alert('Please connect to Google Calendar first');
+                return;
+            }
+            
+            try {
+                const now = new Date();
+                const oneMonthLater = new Date(now.getTime() + 30*24*60*60*1000);
+                
+                const response = await gapi.client.calendar.events.list({
+                    'calendarId': 'primary',
+                    'timeMin': now.toISOString(),
+                    'timeMax': oneMonthLater.toISOString(),
+                    'showDeleted': false,
+                    'singleEvents': true,
+                    'orderBy': 'startTime'
+                });
+                
+                const events = response.result.items;
+                
+                if (!events || events.length === 0) {
+                    alert('No upcoming events found in Google Calendar');
+                    return;
+                }
+                
+                let imported = 0;
+                
+                events.forEach(event => {
+                    // Check if event already exists
+                    const exists = scheduleItems.some(item => item.googleCalendarId === event.id);
+                    if (exists) return;
+                    
+                    const startDateTime = event.start.dateTime || event.start.date;
+                    const date = startDateTime.split('T')[0];
+                    const time = startDateTime.includes('T') ? startDateTime.split('T')[1].substring(0, 5) : '09:00';
+                    
+                    const item = {
+                        type: 'work', // Default type
+                        title: event.summary || 'Imported Event',
+                        date: date,
+                        time: time,
+                        location: event.location || 'No location',
+                        googleCalendarId: event.id,
+                        isRecurring: false,
+                        id: Date.now() + Math.random()
+                    };
+                    
+                    scheduleItems.push(item);
+                    imported++;
+                });
+                
+                saveUserData();
+                displaySchedule();
+                updateAIAssistant();
+                
+                alert(`✓ Imported ${imported} events from Google Calendar!`);
+            } catch (error) {
+                console.error('Error importing from Google Calendar:', error);
+                alert('Failed to import events from Google Calendar');
+            }
+        }
+        
+        // Initialize Google Calendar API when page loads
+        window.addEventListener('load', () => {
+            console.log('🔄 Page loaded, initializing Google APIs...');
+            
+            // Wait for scripts to load
+            let attempts = 0;
+            const maxAttempts = 20; // 10 seconds max
+            
+            const initCheck = setInterval(() => {
+                attempts++;
+                console.log(`Attempt ${attempts}/${maxAttempts} - Checking Google APIs...`);
+                
+                // Check GAPI
+                if (typeof gapi !== 'undefined' && !gapiInited) {
+                    console.log('✓ GAPI script loaded!');
+                    gapiLoaded();
+                }
+                
+                // Check GIS
+                if (typeof google !== 'undefined' && typeof google.accounts !== 'undefined' && !gisInited) {
+                    console.log('✓ GIS script loaded!');
+                    gisLoaded();
+                }
+                
+                // Both ready
+                if (gapiInited && gisInited) {
+                    console.log('✅ Google Calendar API ready!');
+                    clearInterval(initCheck);
+                    updateGoogleCalendarButton();
+                }
+                
+                // Timeout after max attempts
+                if (attempts >= maxAttempts) {
+                    console.warn('⚠️ Google APIs did not load in time');
+                    clearInterval(initCheck);
+                    const btn = document.getElementById('gcalButton');
+                    if (btn) {
+                        btn.textContent = '⚠️ Offline';
+                        btn.disabled = true;
+                        btn.title = 'Google Calendar scripts failed to load. Try refreshing the page.';
+                    }
+                }
+            }, 500);
+        });
+        
+        // Update button text based on API status
+        function updateGoogleCalendarButton() {
+            const btn = document.getElementById('gcalButton');
+            if (btn) {
+                if (gapiInited && gisInited) {
+                    btn.textContent = googleCalendarConnected ? '✓ Google Calendar' : '📅 Google Calendar';
+                    btn.disabled = false;
+                } else {
+                    btn.textContent = '⏳ Loading...';
+                    btn.disabled = true;
+                }
+            }
+        }
+        
+        // Data storage
+        let users = JSON.parse(localStorage.getItem('scheduler_users') || '{}');
+        let currentUser = null;
+        let scheduleItems = [];
+        let todoItems = [];
+        let journalEntries = [];
+        let notificationPermission = false;
+        let checkedNotifications = new Set();
+        
+        // Request notification permission
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    notificationPermission = permission === 'granted';
+                    console.log('✓ Notifications enabled:', notificationPermission);
+                });
+            } else if (Notification.permission === 'granted') {
+                notificationPermission = true;
+            }
+        }
+        
+        // Show browser notification
+        function showBrowserNotification(title, body) {
+            if (notificationPermission) {
+                new Notification(title, { body, icon: '📅' });
+            }
+        }
+        
+        // Toggle class-specific options
+        function toggleClassOptions() {
+            const type = document.getElementById('scheduleType').value;
+            const classOptions = document.getElementById('classOptions');
+            const assignmentFields = document.getElementById('assignmentFields');
+            const singleEventFields = document.getElementById('singleEventFields');
+            
+            // Show/hide class options
+            classOptions.style.display = type === 'class' ? 'block' : 'none';
+            
+            // Show/hide assignment fields
+            assignmentFields.style.display = type === 'assignment' ? 'block' : 'none';
+            singleEventFields.style.display = type === 'assignment' ? 'none' : 'block';
+            
+            if (type !== 'class') {
+                document.getElementById('recurringClass').checked = false;
+                toggleRecurring();
+            }
+        }
+        
+        // Toggle recurring class fields
+        function toggleRecurring() {
+            const isRecurring = document.getElementById('recurringClass').checked;
+            document.getElementById('singleEventFields').style.display = isRecurring ? 'none' : 'block';
+            document.getElementById('recurringFields').style.display = isRecurring ? 'block' : 'none';
+        }
+        
+        // Generate recurring dates
+        function generateRecurringDates(startDate, endDate, startTime, endTime, daysOfWeek) {
+            const dates = [];
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                if (daysOfWeek.includes(d.getDay())) {
+                    dates.push({
+                        date: d.toISOString().split('T')[0],
+                        time: startTime,
+                        endTime: endTime
+                    });
+                }
+            }
+            return dates;
+        }
+        
+        // Profile Picture Functions
+        function openProfileModal() {
+            document.getElementById('profileModal').style.display = 'flex';
+            document.getElementById('editName').value = currentUser.name;
+            if (currentUser.profilePic) {
+                document.getElementById('profilePreview').src = currentUser.profilePic;
+                document.getElementById('profilePreview').style.display = 'block';
+            }
+        }
+        
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+        
+        function previewProfilePic(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profilePreview').src = e.target.result;
+                    document.getElementById('profilePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function saveProfile() {
+            currentUser.name = document.getElementById('editName').value.trim();
+            
+            const preview = document.getElementById('profilePreview');
+            if (preview.style.display !== 'none' && preview.src) {
+                currentUser.profilePic = preview.src;
+            }
+            
+            users[currentUser.username] = currentUser;
+            localStorage.setItem('scheduler_users', JSON.stringify(users));
+            localStorage.setItem('scheduler_currentUser', JSON.stringify(currentUser));
+            
+            // Update display
+            document.getElementById('userName').textContent = currentUser.name;
+            const initial = document.getElementById('userInitial');
+            if (currentUser.profilePic) {
+                initial.style.backgroundImage = `url(${currentUser.profilePic})`;
+                initial.style.backgroundSize = 'cover';
+                initial.textContent = '';
+            } else {
+                initial.textContent = currentUser.name.charAt(0).toUpperCase();
+            }
+            
+            closeProfileModal();
+            alert('Profile updated!');
+        }
+        
+        // AI Assistant Functions
+        function updateAIAssistant() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const hour = now.getHours();
+            
+            let greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+            
+            const todayEvents = scheduleItems.filter(item => item.date === today);
+            const pendingTodos = todoItems.filter(item => !item.completed);
+            
+            let message = `<strong>Good ${greeting}, ${currentUser.name}!</strong><br><br>`;
+            
+            if (todayEvents.length > 0) {
+                message += `📅 You have ${todayEvents.length} event(s) today:<br>`;
+                todayEvents.forEach(event => {
+                    message += `• ${event.time} - ${event.title} at ${event.location}<br>`;
+                });
+            } else {
+                message += '📅 No events scheduled for today.<br>';
+            }
+            
+            message += `<br>✓ ${pendingTodos.length} pending task(s)`;
+            
+            if (notificationPermission) {
+                message += '<br><br><small style="opacity: 0.8;">🔔 Automatic reminders active</small>';
+            }
+            
+            document.getElementById('aiMessage').innerHTML = message;
+        }
+        
+        // Check for upcoming events and send notifications
+        function checkNotifications() {
+            const now = new Date();
+            const currentTime = now.getTime();
+            
+            scheduleItems.forEach(item => {
+                const itemDate = new Date(item.date + 'T' + item.time);
+                const timeDiff = itemDate.getTime() - currentTime;
+                
+                // Notify 1 hour before
+                if (timeDiff > 0 && timeDiff <= 3600000 && timeDiff >= 3540000) {
+                    const key = `${item.id}-60`;
+                    if (!checkedNotifications.has(key)) {
+                        checkedNotifications.add(key);
+                        showAINotification(`⏰ Upcoming: ${item.title} in 1 hour`, `${item.location} at ${item.time}`);
+                        showBrowserNotification(`${item.title} in 1 hour`, `${item.location} at ${item.time}`);
+                    }
+                }
+                
+                // Notify 15 minutes before
+                if (timeDiff > 0 && timeDiff <= 900000 && timeDiff >= 840000) {
+                    const key = `${item.id}-15`;
+                    if (!checkedNotifications.has(key)) {
+                        checkedNotifications.add(key);
+                        showAINotification(`🔔 ${item.title} in 15 minutes!`, `Don't forget - ${item.location}`);
+                        showBrowserNotification(`${item.title} in 15 minutes!`, `Don't forget - ${item.location}`);
+                    }
+                }
+            });
+        }
+        
+        function showAINotification(title, message) {
+            const container = document.getElementById('aiNotifications');
+            const notification = document.createElement('div');
+            notification.className = 'ai-notification';
+            notification.innerHTML = `<strong>${title}</strong><br>${message}`;
+            container.insertBefore(notification, container.firstChild);
+            
+            setTimeout(() => notification.remove(), 10000);
+        }
+        
+        // Helper functions
+        function showMessage(text, isError = false) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + (isError ? 'error' : 'success');
+            setTimeout(() => msg.className = 'message', 3000);
+        }
+        
+        function showSignup() {
+            document.getElementById('signupForm').classList.remove('hidden');
+            document.getElementById('signinForm').classList.add('hidden');
+        }
+        
+        function showSignin() {
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('signinForm').classList.remove('hidden');
+        }
+        
+        function showApp() {
+            console.log('📱 Showing app...');
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('appContainer').classList.add('active');
+            
+            // Display user info
+            document.getElementById('userName').textContent = currentUser.name;
+            const initial = document.getElementById('userInitial');
+            if (currentUser.profilePic) {
+                initial.style.backgroundImage = `url(${currentUser.profilePic})`;
+                initial.style.backgroundSize = 'cover';
+                initial.style.backgroundPosition = 'center';
+                initial.textContent = '';
+            } else {
+                initial.textContent = currentUser.name.charAt(0).toUpperCase();
+            }
+            
+            // Update Google Calendar button
+            updateGoogleCalendarButton();
+            
+            // Restore Google Calendar connection status
+            if (currentUser.googleCalendarConnected && gapiInited && gisInited) {
+                googleCalendarConnected = true;
+                document.getElementById('gcalButton').textContent = '✓ Google Calendar';
+                
+                // Try to restore access token
+                if (currentUser.googleAccessToken) {
+                    accessToken = currentUser.googleAccessToken;
+                    gapi.client.setToken({access_token: accessToken});
+                }
+            }
+            
+            // Load user data
+            loadUserData();
+            displayAll();
+            updateAIAssistant();
+            
+            // Request notification permission
+            setTimeout(requestNotificationPermission, 1000);
+            
+            // Start notification checking (every 60 seconds)
+            setInterval(checkNotifications, 60000);
+            checkNotifications();
+        }
+        
+        function loadUserData() {
+            const username = currentUser.username;
+            scheduleItems = JSON.parse(localStorage.getItem(`${username}_schedule`) || '[]');
+            todoItems = JSON.parse(localStorage.getItem(`${username}_todos`) || '[]');
+            journalEntries = JSON.parse(localStorage.getItem(`${username}_journal`) || '[]');
+        }
+        
+        function saveUserData() {
+            const username = currentUser.username;
+            localStorage.setItem(`${username}_schedule`, JSON.stringify(scheduleItems));
+            localStorage.setItem(`${username}_todos`, JSON.stringify(todoItems));
+            localStorage.setItem(`${username}_journal`, JSON.stringify(journalEntries));
+        }
+        
+        // Sign Up
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('📝 SIGNUP FORM SUBMITTED!!!');
+            alert('Signup form submitted! Check console.');
+            
+            const name = document.getElementById('signupName').value.trim();
+            const username = document.getElementById('signupUsername').value.trim().toLowerCase();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            
+            console.log('Form data:', { name, username, email, password: password.length + ' chars' });
+            
+            if (!name || !username || !email || !password) {
+                alert('Please fill all fields!');
+                showMessage('Please fill all fields', true);
+                return;
+            }
+            
+            if (users[username]) {
+                alert('Username already exists!');
+                showMessage('Username already exists', true);
+                return;
+            }
+            
+            users[username] = { name, username, email, password };
+            localStorage.setItem('scheduler_users', JSON.stringify(users));
+            
+            console.log('✅ User created:', username);
+            console.log('Total users now:', Object.keys(users).length);
+            
+            alert('Account created! Now switching to sign in form...');
+            showMessage('Account created! Please sign in.');
+            this.reset();
+            setTimeout(showSignin, 1500);
+        });
+        
+        // Sign In
+        document.getElementById('signinForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('🔐 SIGNIN FORM SUBMITTED!!!');
+            alert('Signin form submitted! Check console.');
+            
+            const username = document.getElementById('signinUsername').value.trim().toLowerCase();
+            const password = document.getElementById('signinPassword').value;
+            
+            console.log('Login attempt for:', username);
+            console.log('Available users:', Object.keys(users));
+            
+            const user = users[username];
+            
+            if (!user) {
+                alert('User not found!');
+                showMessage('User not found', true);
+                return;
+            }
+            
+            console.log('User found! Checking password...');
+            console.log('Stored password:', user.password);
+            console.log('Entered password:', password);
+            console.log('Match:', user.password === password);
+            
+            if (user.password !== password) {
+                alert('Incorrect password!');
+                showMessage('Incorrect password', true);
+                return;
+            }
+            
+            currentUser = user;
+            localStorage.setItem('scheduler_currentUser', JSON.stringify(currentUser));
+            
+            console.log('✅ Login successful:', username);
+            alert('Login successful! Loading app...');
+            showMessage('Welcome back!');
+            setTimeout(showApp, 1000);
+        });
+        
+        // Logout
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('scheduler_currentUser');
+            location.reload();
+        }
+        
+        // Add Schedule
+        function addSchedule() {
+            const type = document.getElementById('scheduleType').value;
+            const title = document.getElementById('scheduleTitle').value.trim();
+            const location = document.getElementById('scheduleLocation').value.trim();
+            
+            if (!title || !location) {
+                alert('Please fill in title and location');
+                return;
+            }
+            
+            // Handle Assignment type
+            if (type === 'assignment') {
+                const dueDate = document.getElementById('assignmentDueDate').value;
+                const dueTime = document.getElementById('assignmentDueTime').value;
+                const notes = document.getElementById('scheduleNotes').value.trim();
+                
+                if (!dueDate || !dueTime) {
+                    alert('Please fill in due date and time');
+                    return;
+                }
+                
+                scheduleItems.push({
+                    type,
+                    title,
+                    date: dueDate,
+                    time: dueTime,
+                    endTime: dueTime, // Same as start for assignments
+                    location,
+                    notes: notes,
+                    isRecurring: false,
+                    isDueDate: true,
+                    id: Date.now()
+                });
+                
+                alert('✅ Assignment added!');
+                saveUserData();
+                
+                // Clear fields
+                document.getElementById('scheduleTitle').value = '';
+                document.getElementById('assignmentDueDate').value = '';
+                document.getElementById('assignmentDueTime').value = '23:59';
+                document.getElementById('scheduleLocation').value = '';
+                document.getElementById('scheduleNotes').value = '';
+                
+                displaySchedule();
+                updateAIAssistant();
+                return;
+            }
+            
+            const isRecurring = type === 'class' && document.getElementById('recurringClass').checked;
+            
+            if (isRecurring) {
+                // Recurring class
+                const academicSystem = document.getElementById('academicSystem').value;
+                const startDate = document.getElementById('classStartDate').value;
+                const endDate = document.getElementById('classEndDate').value;
+                const startTime = document.getElementById('recurringTime').value;
+                const endTime = document.getElementById('recurringEndTime').value;
+                const selectedDays = Array.from(document.getElementById('recurringDays').selectedOptions).map(o => parseInt(o.value));
+                const notes = document.getElementById('scheduleNotes').value.trim();
+                
+                if (!startDate || !endDate || !startTime || !endTime || selectedDays.length === 0) {
+                    alert('Please fill in all recurring class fields');
+                    return;
+                }
+                
+                const recurringDates = generateRecurringDates(startDate, endDate, startTime, endTime, selectedDays);
+                
+                recurringDates.forEach(dateTime => {
+                    scheduleItems.push({
+                        type,
+                        title,
+                        date: dateTime.date,
+                        time: dateTime.time,
+                        endTime: dateTime.endTime,
+                        location,
+                        notes: notes,
+                        isRecurring: true,
+                        academicSystem,
+                        id: Date.now() + Math.random()
+                    });
+                });
+                
+                alert(`✅ Added ${recurringDates.length} ${academicSystem} class sessions!`);
+            } else {
+                // Single event
+                const date = document.getElementById('scheduleDate').value;
+                const startTime = document.getElementById('scheduleTime').value;
+                const endTime = document.getElementById('scheduleEndTime').value;
+                const notes = document.getElementById('scheduleNotes').value.trim();
+                
+                if (!date || !startTime || !endTime) {
+                    alert('Please fill in date, start time, and end time');
+                    return;
+                }
+                
+                scheduleItems.push({
+                    type,
+                    title,
+                    date,
+                    time: startTime,
+                    endTime: endTime,
+                    location,
+                    notes: notes,
+                    isRecurring: false,
+                    id: Date.now()
+                });
+                
+                alert('✅ Event added!');
+            }
+            
+            saveUserData();
+            
+            // Auto-sync to Google Calendar if connected
+            if (googleCalendarConnected) {
+                if (isRecurring) {
+                    // Sync all recurring events
+                    const newEvents = scheduleItems.slice(-recurringDates.length);
+                    let syncPromises = newEvents.map(event => 
+                        syncEventToGoogleCalendar(event).then(gcalId => {
+                            if (gcalId) event.googleCalendarId = gcalId;
+                        })
+                    );
+                    Promise.all(syncPromises).then(() => {
+                        saveUserData();
+                        console.log('✓ Recurring events synced to Google Calendar');
+                    });
+                } else {
+                    // Sync single event
+                    const lastItem = scheduleItems[scheduleItems.length - 1];
+                    syncEventToGoogleCalendar(lastItem).then(gcalId => {
+                        if (gcalId) {
+                            lastItem.googleCalendarId = gcalId;
+                            saveUserData();
+                            showAINotification('📅 Synced to Google Calendar', `${lastItem.title} added to your calendar`);
+                        }
+                    });
+                }
+            }
+            
+            // Clear inputs
+            document.getElementById('scheduleTitle').value = '';
+            document.getElementById('scheduleDate').value = '';
+            document.getElementById('scheduleTime').value = '';
+            document.getElementById('scheduleEndTime').value = '';
+            document.getElementById('classStartDate').value = '';
+            document.getElementById('classEndDate').value = '';
+            document.getElementById('recurringTime').value = '';
+            document.getElementById('recurringEndTime').value = '';
+            document.getElementById('scheduleLocation').value = '';
+            document.getElementById('scheduleNotes').value = '';
+            document.getElementById('recurringClass').checked = false;
+            toggleRecurring();
+            
+            displaySchedule();
+            updateAIAssistant();
+        }
+        
+        function displaySchedule() {
+            const list = document.getElementById('scheduleList');
+            if (scheduleItems.length === 0) {
+                list.innerHTML = '<div class="empty-state">No events scheduled yet</div>';
+                return;
+            }
+            
+            scheduleItems.sort((a, b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+            
+            list.innerHTML = scheduleItems.map(item => `
+                <div class="item ${item.type}">
+                    <span class="item-type ${item.type}">${item.type}</span>
+                    ${item.isRecurring ? `<span class="item-type" style="background: #9B59B6;">🔄 ${item.academicSystem}</span>` : ''}
+                    ${item.googleCalendarId ? `<span class="item-type" style="background: #4285f4;">📅 Synced</span>` : ''}
+                    ${item.isDueDate ? `<span class="item-type" style="background: #E67E22;">📌 Due</span>` : ''}
+                    <div class="item-title">${item.title}</div>
+                    <div>📅 ${item.date} ${item.isDueDate ? 'due at' : 'from'} ${item.time}${item.endTime && !item.isDueDate ? ' - ' + item.endTime : ''}</div>
+                    <div>📍 ${item.location}</div>
+                    ${item.notes ? `<div style="margin-top: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 0.9rem;">📝 ${item.notes}</div>` : ''}
+                    <button class="delete-btn" onclick="deleteSchedule(${item.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+        
+        function deleteSchedule(id) {
+            scheduleItems = scheduleItems.filter(item => item.id !== id);
+            saveUserData();
+            displaySchedule();
+        }
+        
+        // Add Todo
+        function addTodo() {
+            const text = document.getElementById('todoInput').value.trim();
+            if (!text) return;
+            
+            todoItems.push({ text, completed: false, id: Date.now() });
+            saveUserData();
+            document.getElementById('todoInput').value = '';
+            displayTodos();
+        }
+        
+        function displayTodos() {
+            const list = document.getElementById('todoList');
+            if (todoItems.length === 0) {
+                list.innerHTML = '<div class="empty-state">No tasks yet</div>';
+                return;
+            }
+            
+            list.innerHTML = todoItems.map(item => `
+                <div class="item">
+                    <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleTodo(${item.id})">
+                    <span style="${item.completed ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${item.text}</span>
+                    <button class="delete-btn" onclick="deleteTodo(${item.id})">Delete</button>
+                </div>
+            `).join('');
+        }
+        
+        function toggleTodo(id) {
+            const item = todoItems.find(t => t.id === id);
+            if (item) {
+                item.completed = !item.completed;
+                saveUserData();
+                displayTodos();
+            }
+        }
+        
+        function deleteTodo(id) {
+            todoItems = todoItems.filter(item => item.id !== id);
+            saveUserData();
+            displayTodos();
+        }
+        
+        // Add Journal
+        function addJournal() {
+            const text = document.getElementById('journalInput').value.trim();
+            if (!text) return;
+            
+            journalEntries.unshift({ text, date: new Date().toISOString(), id: Date.now() });
+            saveUserData();
+            document.getElementById('journalInput').value = '';
+            displayJournal();
+        }
+        
+        function displayJournal() {
+            const list = document.getElementById('journalList');
+            if (journalEntries.length === 0) {
+                list.innerHTML = '<div class="empty-state">No journal entries yet</div>';
+                return;
+            }
+            
+            list.innerHTML = journalEntries.slice(0, 3).map(entry => `
+                <div class="item">
+                    <strong>${new Date(entry.date).toLocaleDateString()}</strong>
+                    <div>${entry.text}</div>
+                </div>
+            `).join('');
+        }
+        
+        function displayAll() {
+            displaySchedule();
+            displayTodos();
+            displayJournal();
+            updateAIAssistant();
+        }
+        
+        // Check if already logged in
+        const saved = localStorage.getItem('scheduler_currentUser');
+        if (saved) {
+            currentUser = JSON.parse(saved);
+            console.log('👤 User already logged in:', currentUser.username);
+            showApp();
+        } else {
+            console.log('👋 No user logged in, showing sign in');
+            showSignin();
+        }
+        
+        console.log('✅ App initialized');
+        console.log('📊 Registered users:', Object.keys(users).length);
+        
+        // Verify forms exist
+        console.log('📋 Signup form exists:', !!document.getElementById('signupForm'));
+        console.log('📋 Signin form exists:', !!document.getElementById('signinForm'));
+        console.log('🎯 Event listeners should be attached now');
+    </script>
+</body>
+</html>
